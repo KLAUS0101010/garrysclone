@@ -45,6 +45,8 @@ jobs:
           restore-keys: Library-Android-
 
       - uses: game-ci/unity-builder@v4
+        id: unity-build-step
+        continue-on-error: true # Позволяет воркфлоу не умирать сразу, чтобы мы спасли логи
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -56,9 +58,21 @@ jobs:
           androidTargetSdkVersion: AndroidApiLevel34
           buildName: GmodMobile
           versioningStrategy: None
-          allowDirtyBuild: true # <-- ГЛАВНЫЙ ФИКС! Разрешаем сборку распакованного ZIP
+          allowDirtyBuild: true
+
+      - name: Upload Unity Editor Log on Failure
+        if: steps.unity-build-step.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unity-Editor-Log
+          path: github-workspace-artifacts/*.log # Сохраняем подробный отчет об ошибке компиляции
+
+      - name: Check Build Status
+        if: steps.unity-build-step.outcome == 'failure'
+        run: exit 1 # Если билд упал, честно завершаем шаг ошибкой после сохранения логов
 
       - uses: actions/upload-artifact@v4
+        if: steps.unity-build-step.outcome == 'success'
         with:
           name: GmodMobile-apk
           path: build/Android/*.apk
