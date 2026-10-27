@@ -40,8 +40,6 @@ jobs:
 
       - name: Run Unity Builder
         uses: game-ci/unity-builder@v4
-        id: unity-build-step
-        continue-on-error: true # Не даем упасть всему процессу, чтобы успеть забрать логи из контейнера
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -54,22 +52,9 @@ jobs:
           buildName: GmodMobile
           versioningStrategy: None
           allowDirtyBuild: true
-          customParameters: -logFile /github/workspace/unity_build_log.txt # Заставляем Unity писать лог прямо в твою рабочую папку
-
-      - name: Print Unity Log to Console
-        run: |
-          if [ -f unity_build_log.txt ]; then
-            tail -n 100 unity_build_log.txt
-          else
-            echo "Log file not found!"
-          fi
-
-      - name: Check Build Status
-        if: steps.unity-build-step.outcome == 'failure'
-        run: exit 1 # Честно красим сборку в красный, если билд внутри Unity реально не удался
+          customParameters: -logFile - # Принудительно выводим весь лог Unity прямо в окно консоли GitHub
 
       - uses: actions/upload-artifact@v4
-        if: steps.unity-build-step.outcome == 'success'
         with:
           name: GmodMobile-apk
           path: build/Android/*.apk
