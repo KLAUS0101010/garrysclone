@@ -38,12 +38,6 @@ jobs:
           echo "Detected Unity Version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-Android-${{ hashFiles('Assets/', 'Packages/', 'ProjectSettings/**') }}
-          restore-keys: Library-Android-
-
       - name: Run Unity Builder
         uses: game-ci/unity-builder@v4
         env:
@@ -58,6 +52,13 @@ jobs:
           buildName: GmodMobile
           versioningStrategy: None
           allowDirtyBuild: true
+
+      - name: Upload Unity Editor Log on Failure
+        if: always() # Выгрузить лог вообще в любом случае (даже при падении)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unity-Editor-Log
+          path: github-workspace-artifacts/*.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
