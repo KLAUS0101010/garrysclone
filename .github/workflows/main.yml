@@ -35,27 +35,23 @@ jobs:
         id: unity-version
         run: |
           VERSION=$(grep 'm_EditorVersion:' ProjectSettings/ProjectVersion.txt | awk '{print $2}')
-          echo "Detected Unity Version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Run Unity Builder
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      - name: Setup Unity Engine
+        uses: game-ci/unity-request-activation@v4
+        id: unity-setup
         with:
-          targetPlatform: Android
           unityVersion: ${{ steps.unity-version.outputs.version }}
-          androidExportType: androidPackage
-          androidTargetSdkVersion: AndroidApiLevel34
-          buildName: GmodMobile
-          versioningStrategy: None
-          allowDirtyBuild: true
-          customParameters: -logFile - # Пишем лог сборки прямо в окно консоли GitHub
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: GmodMobile-apk
-          path: build/Android/*.apk
-          retention-days: 14
+      - name: Execute Raw Unity Build Command
+        run: |
+          export UNITY_LICENSE="${{ secrets.UNITY_LICENSE }}"
+          unity-editor \
+            -batchmode \
+            -nographics \
+            -username "${{ secrets.UNITY_EMAIL }}" \
+            -password "${{ secrets.UNITY_PASSWORD }}" \
+            -projectPath . \
+            -buildTarget Android \
+            -executeMethod UnityEditor.BuildPipeline.BuildPlayer \
+            -logFile -
