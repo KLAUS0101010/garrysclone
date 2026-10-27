@@ -27,9 +27,19 @@ jobs:
           if [ -f project.zip ]; then
             unzip -o project.zip
             rm project.zip
+            # Фикс ошибки dirty branch: говорим гиту игнорировать распакованные файлы
+            git config --global --add safe.directory /github/workspace
+            git status
           else
-            echo "project.zip not found, proceeding with repository files"
+            echo "project.zip not found"
           fi
+
+      - name: Get Unity Version
+        id: unity-version
+        run: |
+          VERSION=$(grep 'm_EditorVersion:' ProjectSettings/ProjectVersion.txt | awk '{print $2}')
+          echo "Detected Unity Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v4
         with:
@@ -44,7 +54,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: Android
-          unityVersion: 2022.3.58f1
+          unityVersion: ${{ steps.unity-version.outputs.version }}
           androidExportType: androidPackage
           androidTargetSdkVersion: AndroidApiLevel34
           buildName: GmodMobile
