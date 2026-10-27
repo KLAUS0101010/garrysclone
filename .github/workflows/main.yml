@@ -1,0 +1,56 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Unpack Project ZIP
+        run: |
+          if [ -f project.zip ]; then
+            unzip -o project.zip
+            rm project.zip
+          else
+            echo "project.zip not found, proceeding with repository files"
+          fi
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/', 'Packages/', 'ProjectSettings/**') }}
+          restore-keys: Library-Android-
+
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: Android
+          unityVersion: auto
+          androidExportType: androidPackage
+          androidTargetSdkVersion: AndroidApiLevel34
+          buildName: GmodMobile
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GmodMobile-apk
+          path: build/Android/*.apk
+          retention-days: 14
