@@ -27,9 +27,6 @@ jobs:
           if [ -f project.zip ]; then
             unzip -o project.zip
             rm project.zip
-            # Фикс ошибки dirty branch: говорим гиту игнорировать распакованные файлы
-            git config --global --add safe.directory /github/workspace
-            git status
           else
             echo "project.zip not found"
           fi
@@ -59,6 +56,7 @@ jobs:
           androidTargetSdkVersion: AndroidApiLevel34
           buildName: GmodMobile
           versioningStrategy: None
+          allowDirtyBuild: true # <-- ГЛАВНЫЙ ФИКС! Разрешаем сборку распакованного ZIP
 
       - uses: actions/upload-artifact@v4
         with:
